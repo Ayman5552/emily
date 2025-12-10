@@ -35,14 +35,19 @@ bot = telebot.TeleBot(BOT_TOKEN)
 
 
 # ----------------------------------------------------
-# HELPER → KANALCHECK
-# Funktion zum Überprüfen, ob ein Benutzer Mitglied des VIP-Kanals ist
+# HELPER-FUNKTIONEN
 # ----------------------------------------------------
+
+# Funktion zur sicheren Abfrage des Vornamens
+def get_user_name(message):
+    """Gibt den Vornamen des Benutzers zurück oder einen liebevollen Standardnamen."""
+    name = message.from_user.first_name
+    return name if name else "Schatz"
+
+# Funktion zum Überprüfen, ob ein Benutzer Mitglied des VIP-Kanals ist
 def is_member(user_id):
     try:
-        # Hier wird die numerische ID des Kanals verwendet
         member = bot.get_chat_member(VIP_CHANNEL, user_id)
-        # Überprüfe, ob der Benutzer den Status "member", "administrator" oder "creator" hat
         return member.status in ["member", "administrator", "creator"]
     except Exception as e:
         print(f"Fehler beim Überprüfen der Kanalmitgliedschaft: {e}")
@@ -50,26 +55,25 @@ def is_member(user_id):
 
 
 # ----------------------------------------------------
-# MARKUP-GENERIERUNG (Für die Haupt-Zahlungsoptionen)
+# MARKUP-GENERIERUNG
 # ----------------------------------------------------
+
+# Markup für die Haupt-Zahlungsoptionen (mit "Zurück zur Info"-Button)
 def generate_pay_options_markup():
     markup = InlineKeyboardMarkup()
     markup.row_width = 1
     markup.add(
         InlineKeyboardButton("🏦 Bank Zahlung", callback_data="pay_bank"),
         InlineKeyboardButton("🪙 Krypto", callback_data="pay_crypto"),
-        InlineKeyboardButton("💳 PaySafe Code", callback_data="pay_paysafe")
+        InlineKeyboardButton("💳 PaySafe Code", callback_data="pay_paysafe"),
+        InlineKeyboardButton("⬅️ Zurück zur Info", callback_data="show_info")
     )
     return markup
 
-
-# ----------------------------------------------------
-# MARKUP-GENERIERUNG (Für den /info Befehl)
-# ----------------------------------------------------
+# Markup für den /info Befehl (führt zu den Zahlungen)
 def generate_info_markup():
     markup = InlineKeyboardMarkup()
     markup.row_width = 1
-    # Leitet den Benutzer direkt zum Zahlungs-Menü weiter
     markup.add(
         InlineKeyboardButton("💕 Lass uns loslegen!", callback_data="show_pay_options")
     )
@@ -77,46 +81,45 @@ def generate_info_markup():
 
 
 # ----------------------------------------------------
-# /start COMMAND
-# Handler für den /start Befehl
+# COMMAND HANDLER
 # ----------------------------------------------------
+
 @bot.message_handler(commands=["start"])
 def start(message):
     user_id = message.from_user.id
+    name = get_user_name(message) # Name abfragen
 
-    # Überprüfe, ob der Benutzer Mitglied des VIP-Kanals ist
+    # Wenn der Benutzer NICHT Mitglied ist -> Gekürzte Info + Kanalbeitritt als Zwang
     if not is_member(user_id):
-        # Nachricht, wenn der Benutzer NICHT Mitglied ist (liebevoller)
+        # NEUER, REALISTISCHER TEXT FÜR DEN KANALBEITRITT
         text_de = (
-            "Ach, du Süßer! Willkommen in meiner Welt! 🌸💖\n"
-            "Wusstest du schon? In meiner VIP-Gruppe warten momentan über **70 heiße Videos** auf dich! 🔥\n\n"
-            "Als ersten kleinen Schritt, tritt bitte kurz meinem **öffentlichen Kanal** bei, damit wir verbunden sind:\n\n"
+            f"Ach, du lieber {name}! Willkommen in meiner süßen Welt! 🌸💖\n\n"
+            "In meiner exklusiven VIP-Gruppe warten **über 70 sündhaft heiße Videos** auf dich, "
+            "und ich telefoniere auch ab und zu mit meinen treuesten Kunden! 🔥📞\n\n"
+            "Damit wir uns von Anfang an verbunden fühlen und du keine meiner süßen Updates verpasst, "
+            "**tritt bitte kurz** meinem **öffentlichen Kanal** bei:\n"
             f"👉 {DISPLAY_CHANNEL_LINK}\n\n"
-            f"Der permanente VIP-Zugang kostet nur {PRICE_INFO}.\n"
-            "Komm danach sofort zurück, Süße! Ich warte auf dich! ✨"
+            f"Der permanente Zugang kostet nur **{PRICE_INFO}**.\n"
+            "Komm danach sofort zurück! Ich freu mich auf dich! ✨"
         )
         bot.send_message(message.chat.id, text_de)
         return
 
-    # Wenn der Benutzer Mitglied ist, sende die Begrüßungsnachricht (liebevoller)
+    # Wenn der Benutzer Mitglied ist (Bereit zur Zahlung)
     start_text_de = (
-        "Hallo mein Schatz 💕\n"
+        f"Hallo mein lieber {name} 💕\n"
         "Toll, dass du dabei bist! Momentan warten über **70 Videos** in der VIP-Gruppe darauf, von dir entdeckt zu werden! 🌷✨\n\n"
         "Jetzt fehlt nur noch ein kleiner Schritt, damit ich dich in die VIP-Gruppe schicken kann! \n"
         "Sende mir jetzt bitte nur noch deinen **Zahlungsnachweis**\n"
         "(am besten als Screenshot oder Dokument).  \n"
         "Ich kümmere mich dann sofort und ganz liebevoll um alles Weitere 🤍\n\n"
-        "Falls du noch nicht bezahlt hast: /pay zeigt dir alle Optionen."
+        "Falls du noch zahlen möchtest, nutze /pay für alle Optionen."
     )
     bot.send_message(message.chat.id, start_text_de)
 
 
-# ----------------------------------------------------
-# /pay COMMAND (Hauptbefehl für Zahlungsoptionen)
-# ----------------------------------------------------
 @bot.message_handler(commands=["pay"])
 def pay_options(message):
-    # Text weniger direkt auf Geldforderung ausgerichtet
     bot.send_message(
         message.chat.id,
         f"Schatz, wähle einfach, wie du mir den **permanenten Zugang für {PRICE_INFO}** sichern möchtest! 🎀",
@@ -124,10 +127,6 @@ def pay_options(message):
     )
 
 
-# ----------------------------------------------------
-# /support COMMAND
-# Handler für den /support Befehl
-# ----------------------------------------------------
 @bot.message_handler(commands=["support"])
 def support(message):
     support_text_de = (
@@ -137,13 +136,9 @@ def support(message):
     bot.send_message(message.chat.id, support_text_de)
 
 
-# ----------------------------------------------------
-# /info COMMAND
-# Handler für den /info Befehl
-# ----------------------------------------------------
 @bot.message_handler(commands=["info"])
 def info(message):
-    # Text mit 70 Videos, mehr Liebe und Telefonat-Info
+    # DIESER TEXT BLEIBT LANG UND DETAILLIERT
     info_text_de = (
         "Hallo mein Schatz! Herzlich willkommen in meiner süßen Welt! 🥰\n\n"
         "Ich bin Emily, 19 Jahre alt, und ich stecke all meine Leidenschaft in heiße 18+ Videos! "
@@ -152,14 +147,9 @@ def info(message):
         "Du kannst jetzt Zugang zu dieser tollen Community kaufen! "
         f"Der permanente Zugang kostet nur {PRICE_INFO}. Lass uns Spaß haben! ✨"
     )
-    # Button hinzugefügt, der zu den Zahlungsoptionen führt
     bot.send_message(message.chat.id, info_text_de, reply_markup=generate_info_markup())
 
 
-# ----------------------------------------------------
-# /regeln COMMAND
-# NEUER Handler für den /regeln Befehl mit den rechtlichen Hinweisen
-# ----------------------------------------------------
 @bot.message_handler(commands=["regeln", "rules"])
 def rules(message):
     rules_text_de = (
@@ -177,11 +167,11 @@ def rules(message):
 
 
 # ----------------------------------------------------
-# CALLBACK QUERY HANDLER (Reagiert auf Button-Klicks für Zahlungsdetails)
+# CALLBACK HANDLER
 # ----------------------------------------------------
+
 @bot.callback_query_handler(func=lambda call: call.data.startswith('pay_'))
 def callback_payment_options(call):
-    # Eindeutige Status-Nachricht beim Klick
     bot.answer_callback_query(call.id, "Öffne Zahlungsinfos... 💖") 
 
     markup = InlineKeyboardMarkup()
@@ -195,6 +185,7 @@ def callback_payment_options(call):
             f"BIC: `{BIC}`\n\n"
             "Wichtig: Bitte gib bei der Banküberweisung als Verwendungszweck unbedingt deinen Telegram-Benutzernamen an, damit ich dich zuordnen kann! ❤️"
         )
+    # ... (Krypto und PaySafe Code Texte bleiben gleich)
     elif call.data == "pay_crypto":
         text_de = (
             "🪙 Krypto-Liebe – Schnell und anonym:\n\n"
@@ -209,7 +200,6 @@ def callback_payment_options(call):
     else:
         text_de = "Entschuldigung, diese Option ist mir nicht bekannt."
 
-    # Nachricht bearbeiten, um die neuen Buttons anzuzeigen
     bot.edit_message_text(
         chat_id=call.message.chat.id,
         message_id=call.message.message_id,
@@ -219,12 +209,9 @@ def callback_payment_options(call):
     )
 
 
-# ----------------------------------------------------
-# CALLBACK QUERY HANDLER (Reagiert auf "Zurück"-Button)
-# ----------------------------------------------------
 @bot.callback_query_handler(func=lambda call: call.data == "back_to_pay_options")
 def callback_back_to_options(call):
-    bot.answer_callback_query(call.id, "Zurück zu den Optionen... 🎀") # Bestätigt den Button-Klick
+    bot.answer_callback_query(call.id, "Zurück zu den Optionen... 🎀")
 
     bot.edit_message_text(
         chat_id=call.message.chat.id,
@@ -234,12 +221,9 @@ def callback_back_to_options(call):
     )
 
 
-# ----------------------------------------------------
-# CALLBACK QUERY HANDLER (Reagiert auf Button bei /info)
-# ----------------------------------------------------
 @bot.callback_query_handler(func=lambda call: call.data == "show_pay_options")
 def callback_show_pay_options(call):
-    bot.answer_callback_query(call.id, "Wunderbar, hier sind die Zahlungen! 💸") # Bestätigt den Button-Klick
+    bot.answer_callback_query(call.id, "Wunderbar, hier sind die Zahlungen! 💸")
 
     # Bearbeitet die Nachricht, um direkt die Zahlungsoptionen anzuzeigen
     bot.edit_message_text(
@@ -249,28 +233,46 @@ def callback_show_pay_options(call):
         reply_markup=generate_pay_options_markup()
     )
 
+# Führt von /pay zurück zur /info Ansicht
+@bot.callback_query_handler(func=lambda call: call.data == "show_info")
+def callback_show_info(call):
+    bot.answer_callback_query(call.id, "Zurück zur Übersicht! 🎀")
+
+    # DETAIL-TEXT aus /info wird hier verwendet
+    info_text_de = (
+        "Hallo mein Schatz! Herzlich willkommen in meiner süßen Welt! 🥰\n\n"
+        "Ich bin Emily, 19 Jahre alt, und ich stecke all meine Leidenschaft in heiße 18+ Videos! "
+        "In meiner exklusiven VIP-Gruppe warten momentan **über 70 sündhaft heiße Videos** auf dich! 🔥\n\n"
+        "Außerdem findest du dort meine allerheißesten Inhalte und ich telefoniere auch ab und zu mit meinen treuesten Kunden, um eine ganz persönliche Verbindung aufzubauen! 📞💖\n\n"
+        "Du kannst jetzt Zugang zu dieser tollen Community kaufen! "
+        f"Der permanente Zugang kostet nur {PRICE_INFO}. Lass uns Spaß haben! ✨"
+    )
+    
+    bot.edit_message_text(
+        chat_id=call.message.chat.id,
+        message_id=call.message.message_id,
+        text=info_text_de,
+        reply_markup=generate_info_markup() 
+    )
 
 # ----------------------------------------------------
-# ZAHLUNGSNACHWEIS HANDLING
-# Handler für Fotos und Dokumente (Zahlungsnachweise)
+# ZAHLUNGSNACHWEIS HANDLING UND FALLBACK
 # ----------------------------------------------------
+
 @bot.message_handler(content_types=["photo", "document"])
 def handle_proof(message):
     user_id = message.from_user.id
 
-    # Überprüfe erneut die Kanalmitgliedschaft, bevor der Nachweis bearbeitet wird
     if not is_member(user_id):
-        # Nachricht für den Fall, dass der Pflichtkanal fehlt
+        # ANGEPASSTER TEXT für den Fall, dass der Pflichtkanal fehlt
         bot.send_message(
             message.chat.id,
             f"Halt, stopp! Bevor du den Nachweis sendest, tritt bitte zuerst meinem öffentlichen Kanal bei:\n👉 {DISPLAY_CHANNEL_LINK}" 
         )
         return
 
-    # Leite den Zahlungsnachweis an den Admin weiter
     bot.forward_message(ADMIN_ID, message.chat.id, message.message_id)
 
-    # Konsolidierte Bestätigungs- und Abschlussnachricht an den Benutzer (mit mehr Liebe)
     confirmation_text = (
         "Juhu! Danke dir, mein Schatz! 🌸🥰\n"
         "Ich habe deinen Zahlungsnachweis bekommen und sofort ganz schnell an meinen Admin weitergeleitet.\n"
@@ -279,7 +281,6 @@ def handle_proof(message):
     )
     bot.send_message(message.chat.id, confirmation_text)
 
-    # Sende das Begrüßungsvideo
     try:
         with open(WELCOME_VIDEO_PATH, "rb") as video:
             bot.send_video(message.chat.id, video)
@@ -289,25 +290,30 @@ def handle_proof(message):
         bot.send_message(message.chat.id, f"Fehler beim Senden des Videos: {e}")
 
 
-# ----------------------------------------------------
-# WENN ER TEXT SENDET (Fallback-Handler)
-# Dieser Handler fängt alle Nachrichten ab, die keine Befehle, Fotos oder Dokumente sind
-# ----------------------------------------------------
 @bot.message_handler(func=lambda m: True)
 def fallback(message):
-    # Fallback mit mehr Liebe
+    name = get_user_name(message)
+    # Fallback mit persönlicher Anrede und Button zum Bezahlen
+    fallback_text = (
+        f"Oh, mein lieber {name} 🥺🌺\n"
+        "Du hast mir Text geschickt! Ich bin eine KI und verstehe gerade nur Befehle oder einen Zahlungsnachweis. \n\n"
+        "Wenn du schon bezahlt hast, schicke mir bitte ein **Foto oder Dokument** deines Nachweises, damit ich alles schnell für dich freischalten kann! Ich will dich doch nicht warten lassen! 💖✨"
+    )
+
+    markup = InlineKeyboardMarkup()
+    markup.add(
+        InlineKeyboardButton("💸 Zu den Zahlungsmöglichkeiten", callback_data="show_pay_options")
+    )
+
     bot.send_message(
         message.chat.id,
-        "Oh, mein Lieber 🥺🌺\n"
-        "Du musst mir ein **Foto oder Dokument** deines Zahlungsnachweises schicken,\n"
-        "damit ich alles schnell für dich freischalten kann! Ich will dich doch nicht warten lassen! 💖✨\n\n"
-        "Wenn du noch bezahlen musst: /pay zeigt dir alle Möglichkeiten, wie wir das machen können!"
+        fallback_text,
+        reply_markup=markup
     )
 
 
 # ----------------------------------------------------
 # START BOT
-# Starte den Bot und lasse ihn auf Nachrichten pollen
 # ----------------------------------------------------
 print("Bot startet...")
 bot.polling(none_stop=True)
