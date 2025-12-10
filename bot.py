@@ -10,10 +10,14 @@ load_dotenv()
 # CONFIG (Aus .env geladen)
 # ----------------------------------------------------
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-# Stelle sicher, dass ADMIN_ID und VIP_CHANNEL in deinen Render-Umgebungsvariablen korrekt gesetzt sind
+# Wichtig: ADMIN_ID sollte die NUMERISCHE ID des Admins sein.
 ADMIN_ID = int(os.getenv("ADMIN_ID"))
+# Wichtig: VIP_CHANNEL sollte der @username des Kanals sein (z.B. "@ChayaVIP")
 VIP_CHANNEL = os.getenv("VIP_CHANNEL")
 WELCOME_VIDEO_PATH = "welcome.mp4" # Stelle sicher, dass diese Datei im selben Verzeichnis liegt
+
+# Zusätzliche Info
+PRICE_INFO = "50€ für permanenten Zugriff"
 
 # ----------------------------------------------------
 # ZAHLUNGSDATEN (Direkt im Code)
@@ -34,6 +38,7 @@ bot = telebot.TeleBot(BOT_TOKEN)
 # ----------------------------------------------------
 def is_member(user_id):
     try:
+        # VIP_CHANNEL muss hier der @username sein, damit get_chat_member funktioniert
         member = bot.get_chat_member(VIP_CHANNEL, user_id)
         # Überprüfe, ob der Benutzer den Status "member", "administrator" oder "creator" hat
         return member.status in ["member", "administrator", "creator"]
@@ -64,12 +69,17 @@ def generate_pay_options_markup():
 def start(message):
     user_id = message.from_user.id
 
+    # Erstelle den korrekten t.me Link aus dem @username für die Anzeige
+    channel_link_for_display = f"t.me/{VIP_CHANNEL.lstrip('@')}"
+
     # Überprüfe, ob der Benutzer Mitglied des VIP-Kanals ist
     if not is_member(user_id):
+        # Nachricht, wenn der Benutzer NICHT Mitglied ist
         text_de = (
             "Hey mein Lieber 🌸💖\n"
             "wenn du in meine VIP-Gruppe möchtest, musst du zuerst diesem Kanal beitreten:\n\n"
-            f"👉 {VIP_CHANNEL}\n\n"
+            f"👉 {channel_link_for_display}\n\n" # Hier wird der t.me Link verwendet
+            f"Der Zugang kostet nur {PRICE_INFO}.\n" # Preisinformation hinzugefügt
             "Tritt kurz bei und komm dann wieder hierher zurück.\n"
             "Ich freue mich auf dich ✨"
         )
@@ -95,7 +105,7 @@ def start(message):
 def pay_options(message):
     bot.send_message(
         message.chat.id,
-        "Wähle deine bevorzugte Zahlungsmethode:",
+        f"Wähle deine bevorzugte Zahlungsmethode für {PRICE_INFO}:", # Preis hier auch hinzufügen
         reply_markup=generate_pay_options_markup()
     )
 
@@ -121,7 +131,7 @@ def support(message):
 def info(message):
     info_text_de = (
         "Hey Süßer 💖\n"
-        "hier hast du die Möglichkeit, Zugang zu meiner exklusiven VIP-Gruppe zu kaufen! ✨\n\n"
+        f"hier hast du die Möglichkeit, Zugang zu meiner exklusiven VIP-Gruppe zu kaufen! Der Zugang kostet nur {PRICE_INFO}. ✨\n\n" # Preis hier auch hinzufügen
         "Ich bin Emily, 19 Jahre alt, und ich liebe es, 18+ Videos zu drehen. "
         "In meiner VIP-Gruppe findest du meine heißesten Inhalte und vieles mehr! 🔥\n\n"
         "Nutze /pay, um deine Zahlungsmethode zu wählen und bald dabei zu sein. 🥰"
@@ -181,7 +191,7 @@ def callback_back_to_options(call):
     bot.edit_message_text(
         chat_id=call.message.chat.id,
         message_id=call.message.message_id,
-        text="Wähle deine bevorzugte Zahlungsmethode:",
+        text=f"Wähle deine bevorzugte Zahlungsmethode für {PRICE_INFO}:", # Preis hier auch hinzufügen
         reply_markup=generate_pay_options_markup()
     )
 
@@ -194,11 +204,14 @@ def callback_back_to_options(call):
 def handle_proof(message):
     user_id = message.from_user.id
 
+    # Erstelle den korrekten t.me Link aus dem @username für die Fehlermeldung
+    channel_link_for_display = f"t.me/{VIP_CHANNEL.lstrip('@')}"
+
     # Überprüfe erneut die Kanalmitgliedschaft, bevor der Nachweis bearbeitet wird
     if not is_member(user_id):
         bot.send_message(
             message.chat.id,
-            f"Bitte tritt zuerst dem Kanal bei:\n👉 {VIP_CHANNEL}"
+            f"Bitte tritt zuerst dem Kanal bei:\n👉 {channel_link_for_display}"
         )
         return
 
