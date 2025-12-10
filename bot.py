@@ -157,6 +157,26 @@ def info(message):
 
 
 # ----------------------------------------------------
+# /regeln COMMAND
+# NEUER Handler für den /regeln Befehl mit den rechtlichen Hinweisen
+# ----------------------------------------------------
+@bot.message_handler(commands=["regeln", "rules"])
+def rules(message):
+    rules_text_de = (
+        "Liebe ist Ordnung! Damit wir alle eine wunderschöne Zeit in der VIP-Gruppe haben, beachte bitte diese **unumgänglichen Regeln** zur Absicherung unserer Inhalte: ✨\n\n"
+        "**1. Vertraulichkeit & Rechtliche Schritte (SEHR WICHTIG):**\n"
+        "Mit dem Kauf des VIP-Zugangs bist du damit einverstanden, dass im Falle einer illegalen Weitergabe meiner Videos folgende Schritte eingeleitet werden:\n"
+        "   - **Verfolgung:** Jede unautorisierte Weitergabe wird lückenlos verfolgt und dokumentiert.\n"
+        "   - **Datenerfassung:** Durch Dritte wird automatisiert deine **Telefonnummer** erfasst, um deine Identität zweifelsfrei festzustellen.\n"
+        "   - **Rechtliche Konsequenzen:** Es werden umgehend rechtliche Schritte eingeleitet. Dein Zugang wird sofort und permanent gesperrt.\n\n"
+        "**2. Persönlicher Zugang:** Dein VIP-Zugang ist streng persönlich. Teile den Link oder die Inhalte niemals. 🚫\n"
+        "**3. Respekt:** Sei lieb und respektvoll zu mir und anderen Mitgliedern. ❤️\n\n"
+        "Wenn du Fragen hast, nutze /support. Danke für dein Verständnis und viel Spaß! 🥰"
+    )
+    bot.send_message(message.chat.id, rules_text_de)
+
+
+# ----------------------------------------------------
 # CALLBACK QUERY HANDLER (Reagiert auf Button-Klicks für Zahlungsdetails)
 # ----------------------------------------------------
 @bot.callback_query_handler(func=lambda call: call.data.startswith('pay_'))
