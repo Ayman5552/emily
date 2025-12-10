@@ -54,7 +54,7 @@ def start(message):
         text_de = (
             "Hey mein Lieber 🌸💖\n"
             "wenn du in meine VIP-Gruppe möchtest, musst du zuerst diesem Kanal beitreten:\n\n"
-            f"👉 {VIP_CHANNEL}\n\n"
+            f"👉 {@ChayaVIP}\n\n"
             "Tritt kurz bei und komm dann wieder hierher zurück.\n"
             "Ich freue mich auf dich ✨"
         )
